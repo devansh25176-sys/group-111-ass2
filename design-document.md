@@ -19,7 +19,7 @@ The work was shared across design, implementation, testing, and documentation.
 
 Members and contribution:-
 Devansh Gurawa (2025176) - create process and run, testing, and documentation
-Arnav Taxak (2025100) - shell loop,main and launch
+Arnav Taxak (2025100) - shell loop,main and launch functions
 
 ---
 
@@ -104,7 +104,7 @@ For `cd` and `history` run directly, the recorded pid is the shell's own pid, si
 
 ### 3.5 Signal handling
 
-- A SIGINT handler is installed with `sigaction` (as in Lecture 08). It sets a `volatile sig_atomic_t` flag and writes a newline using `write()`, an async-signal-safe function (`printf` is not safe inside a handler).
+- A SIGINT handler is installed with `sigaction`.
 - The handler is installed without `SA_RESTART`, so Ctrl-C interrupts a blocking `fgets` or `waitpid`, and the shell can terminate and print its summary.
 - Ctrl-C reaches the foreground child as well. Exec resets the handler to its default, so the child terminates normally. Killed-by-SIGINT children are not reported as abnormal.
 - SIGPIPE terminations are ignored in the report, since a pipeline stage ending early (e.g. `head`) is normal.
@@ -122,12 +122,12 @@ SimpleShell supports commands separated by whitespace, with pipes, `cd`, and `hi
 
 | Not supported | Example | Reason |
 |---|---|---|
-| Quotes and backslashes | `echo "a  b"`, `echo hello\ world` | The assignment explicitly excludes them. Arguments are split purely on whitespace, so quote characters would be passed to the program literally. |
+| Quotes and backslashes | `echo "a  b"`, `echo hello\ world` | Arguments are split purely on whitespace, so quote characters would be passed to the program literally. |
 | I/O redirection | `ls > out.txt`, `sort < file.txt`, `>>` | Requires parsing redirection operators and opening files with `open` + `dup2`. The assignment's scope is pipes only. `>` and `<` are passed to the program as ordinary arguments. |
 | Background execution and job control | `./fib 40 &`, `fg`, `bg`, `jobs` | The shell waits for each command to finish before showing the next prompt. Job control needs process groups, terminal ownership (`tcsetpgrp`), and tracking stopped children, which is beyond the assignment. For the same reason, a command suspended with Ctrl-Z is not resumed by the shell. |
 | Builtins other than `cd` and `history` | `export`, `alias`, `unset`, `source` | A builtin must change the shell's own state (environment, aliases), which a forked child cannot do. Only `cd` and `history` were required. There is no `exit` command; the shell terminates with Ctrl-C or Ctrl-D, as the assignment specifies. |
 | `cd` inside a pipeline | `cd /tmp \| ls` | In a pipeline each stage runs in a separate child, so the directory change would not affect the shell. This matches the behavior of real shells, where it has no lasting effect. |
-| `history` with arguments | `history 10` | Only the plain `history` command (alone or as a pipeline stage) is implemented. |
+| `history` with arguments | `history 10` | Only the plain `history` command is implemented. |
 | Shell expansions and syntax | `ls *.c`, `echo $HOME`, `cd ~`, `a; b`, `a && b`, `$(cmd)` | Wildcards, variables, `~`, command separators, and substitution are interpreted by a shell's parser, not by the programs. They are not part of the specified whitespace-only command format, so these characters are passed to the program literally. |
 | Very large inputs | Lines over 1023 characters, more than 32 pipeline stages, more than 127 arguments to one command, more than 1000 commands in a session | The shell uses fixed-size arrays. Each limit is checked and reported with an error. When the history array is full, the shell exits and shows its summary. |
 
